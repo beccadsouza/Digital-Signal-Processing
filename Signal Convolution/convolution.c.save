@@ -1,8 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#define max(a,b) (a>b?a:b)
-#define min(a,b) (a<b?a:b)
 int h[100],x[100],nx[100],nh[100];
 int rangex,rangeh,startx,starth;
 void print(int signal[],int n[],char* s,int range){
@@ -41,34 +38,37 @@ void main(){
 	starth = nh[0];
 	printf("Signal h[n] :\n");
 	print(h,nh,"h",rangeh);
-	//CORRELATION
-
-	printf("\nCorrelation y[n] :\n");
-	int high = startx+rangex-1-starth;
-	int low = -(starth+rangeh-1)+startx;
-	for(int l = low;l<high+1;l++){
-		int temp = 0,a,b;
-		for(int n = min(startx,starth);n<max(startx+rangex,starth+rangeh)+1;n++){
-			a = ((n<(startx+rangex))&&(n>=startx))?x[findindex(n,nx,rangex)]:0;
-			b = ((n-l<(starth+rangeh))&&(n-l>=starth))?h[findindex(n-l,nh,rangeh)]:0;
+	printf("\nLinear Convolution y[n] :\n");
+	for(int y = startx+starth;y<(startx+starth+rangex+rangeh-1);y++){
+		int temp = 0,a = 0,b = 0;
+		for(int k = startx+starth;k<(startx+starth+rangex+rangeh-1);k++){
+			a = ((k<(startx+rangex))&&(k>=startx))?x[findindex(k,nx,rangex)]:0;
+			b = ((y-k<(starth+rangeh))&&(y-k>=starth))?h[findindex(y-k,nh,rangeh)]:0;
 			temp += a*b;
 		}
-		printf("\t\t\ty(%d) = %d\n",l,temp);
+		printf("\t\t\ty(%d) = %d\n",y,temp);
 	}
-
-	// COEFFICIENT OF CORRELATION;
-	double mx=0,mh=0,sumx=0,sumh=0,num=0;
-	for(int i = 0;i<rangex;i++)mx += nx[i];
-	for(int i = 0;i<rangeh;i++)mh += nh[i];
-	mh /= rangex;
-	mx /= rangex;
-
-	for(int i = 0;i<rangex;i++)sumx += (nx[i]-mx)*(nx[i]-mx);
-	for(int i = 0;i<rangeh;i++)sumh += (nh[i]-mh)*(nh[i]-mh);
-	sumh /= rangex;
-	sumx /= rangex;
-
-	for(int i = 0;i<rangeh;i++)num += (nh[i]-mh)*(nx[i]-mx);
-	num /= rangex;
-	printf("\nCoefficient of correlation : %.2lf\n\n",num/(sqrt(sumh)*sqrt(sumx)));
+	int diff = abs(rangex-rangeh);
+	while(diff>0){
+		if(rangex<rangeh){
+			x[rangex] = 0;
+			rangex++;
+		}
+		else{
+			h[rangeh]=0;
+			rangeh++;
+		}
+		diff--;
+	}
+	int c[rangex][rangex];
+	for(int j = 0;j<rangex;j++){
+		for(int k=0;k<rangex;k++)c[k][j] = x[k];
+		rotate(x,rangex);
+	}
+	printf("\nCircular Convolution y[n] :\n");
+	for(int i = 0;i<rangex;i++){
+		int temp = 0;
+		for(int j = 0;j<rangex;j++)temp += c[i][j]*h[j];
+		printf("\t\t\ty(%d) = %d\n",i,temp);
+	}
 }
